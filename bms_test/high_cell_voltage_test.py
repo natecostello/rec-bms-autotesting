@@ -1,49 +1,56 @@
 from rd6006 import RD6006
 from uni_t import DMMMonitor
+from riden import RidenMonitor
 from recq.binary import BinaryMonitor
 from recq.canbus import CanBusMonitor
-
+from instrument_logger import InstrumentLogger
+import can
 import os
 import time
-    
-# determine power supply and DMM usb
-print("Enter device path for power supply (e.g., USB0):")
-powerSupplyInterface = '/dev/tty' + input().upper()
 
-print("Enter device path for DMM (e.g., USB1):")
-dmmInterface = input()
 
-# setup
-ps = RD6006(powerSupplyInterface)
+# TODO: consider moving all setup to another script since it will be common for all tests
+# setup powersupply and monitor
+if os.path.exists('/dev/ttyUSBrd6018'):
+    powersupply_port = '/dev/ttyUSBrd6018'
+else:
+    print("No powersupply detected. Enter port (e.g., /dev/ttyUSB0):")
+    powersupply_port = input()
 
-#wrapper class to round (maybe refactor later)
-class RD6006rounded:
-    def __init__(self, ps):
-        self._powersupply = ps
-    
-    @property
-    def voltage(self):
-        return round(self._powersupply.voltage, 2)
-    
-    @property
-    def measvoltage(self):
-        return round(self._powersupply.measvoltage, 2)
-    
-    @voltage.setter
-    def voltage(self, value):
-        self._powersupply.voltage = value
+powersupply = RD6006(powersupply_port)
+powersupply_monitor = RidenMonitor(powersupply)
 
-powersupply = RD6006rounded(ps)
+# setup multimeter monitor
+if os.path.exists('/dev/ttyUSBut61e'):
+    dmm_port = '/dev/ttyUSBut61e'
+else:
+    print("No multimeter detected. Enter port (e.g., /dev/ttyUSB0):")
+    dmm_port = input()
 
-dmm_monitor = DMMMonitor('volts', interface=dmmInterface)
+dmm_monitor = DMMMonitor(dmm_port)
+print("Enter the name of the parameter measured by the multimeter (e.g., 'Cell_1_Voltage'):")
+dmm_monitor.parametername = input()
 dmm_monitor.start()
 
+
+# setup recq binary monitor
 bin_monitor = BinaryMonitor()
 
+# setup canbus and recq can monitor
 os.system("sudo /sbin/ip link set can0 up type can bitrate 250000")
-time.sleep(1)
+bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=250000)         
+notifier = can.Notifier(bus)
 can_monitor = CanBusMonitor()
-can_monitor.start()
+notifier.add_listener(can_monitor)
+
+# setup logger
+logger = InstrumentLogger()
+logger.addinstrument(powersupply_monitor)
+logger.addinstrument(dmm_monitor)
+logger.addinstrument(bin_monitor)
+logger.addinstrument(can_monitor)
+print("Enter log file prefix:")
+logger.filenameprefix = input()
 
 def log():
     print(f'CE State                {bin_monitor.chargeEnable}')
@@ -60,8 +67,13 @@ def log():
 powersupply_voltage_setting = powersupply.voltage
 powersupply_voltage_output = powersupply.measvoltage
 
+# set limits and test parameters
 max_voltage = 31
+initial_voltage = 26
+powersupply.voltage = initial_voltage
 
+
+# ultimately it would be nice to pull all these parameters from the BMS
 # prompt user for parameters
 print("Use default BMS params? (Y/N)")
 default = input()
@@ -100,7 +112,9 @@ else:
 # promp user to start
 print("Press Enter to Start")
 input()
+
 # start logging
+logger.start()
 
 # prompt user to turn on battery
 print("Turn on Battery")
