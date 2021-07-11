@@ -7,6 +7,8 @@ from instrument_logger import InstrumentLogger
 import can
 import os
 import time
+import unittest
+
 
 
 # TODO: consider moving all setup to another script since it will be common for all tests
@@ -49,8 +51,8 @@ logger.addinstrument(powersupply_monitor)
 logger.addinstrument(dmm_monitor)
 logger.addinstrument(bin_monitor)
 logger.addinstrument(can_monitor)
-print("Enter log file prefix:")
-logger.filenameprefix = input()
+print("Enter log filename:")
+logger.filename = input()
 
 def log():
     print(f'CE State                {bin_monitor.chargeEnable}')
