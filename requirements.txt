@@ -1,0 +1,9 @@
+# Helpful: https://stackoverflow.com/questions/16584552/how-to-state-in-requirements-txt-a-direct-github-source
+####### example-requirements.txt #######
+#
+###### Requirements without Version Specifiers ######
+
+git+https://github.com/natecostello/rec_bms_status.git 
+git+https://github.com/natecostello/uni_t_status.git 
+git+https://github.com/natecostello/riden-status.git 
+git+https://github.com/natecostello/rd6006.git
