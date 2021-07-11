@@ -17,7 +17,7 @@ class BMSTestFixture:
             raise ValueError('No Riden RD6018 Detected')
         powersupply_port = '/dev/ttyUSBrd6018'
         self._powersupply = RD6006(powersupply_port)
-        self._powersupply_monitor = RidenMonitor(powersupply)
+        self._powersupply_monitor = RidenMonitor(self._powersupply)
 
         # DMM is optional depending on test
         if dmm_parametername:
@@ -37,7 +37,7 @@ class BMSTestFixture:
         # setup canbus and recq can monitor
         os.system("sudo /sbin/ip link set can0 up type can bitrate 250000")
         self._bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=250000)         
-        self._notifier = can.Notifier(self._bus)
+        self._notifier = can.Notifier(self._bus, [])
         self._can_monitor = CanBusMonitor()
         self._notifier.add_listener(self._can_monitor)
 
@@ -66,8 +66,25 @@ class BMSTestFixture:
         return self._can_monitor
     
     @property
+    def bin_monitor(self) -> BinaryMonitor:
+        return self._bin_monitor
+    
+    @property
     def logger(self) -> InstrumentLogger:
         return self._logger
+        
+    def start(self) -> None:
+        """Starts any Instrument threads"""
+        if self.dmm_monitor:
+            self.dmm_monitor.start()
+
+    def stop(self) -> None:
+        """Stops any Instrument threads, stops logging"""
+        if self.dmm_monitor:
+            self.dmm_monitor.stop()
+        self._notifier.remove_listener(self._can_monitor)
+        self._bus.shutdown()
+        os.system("sudo /sbin/ip link set can0 down")
         
 
 
