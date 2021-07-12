@@ -5,19 +5,25 @@ from recq.binary import BinaryMonitor
 from recq.canbus import CanBusMonitor
 from instrument_logger import InstrumentLogger
 import can
+from can import Notifier
 import os
 import time
 
 class BMSTestFixture:
 
     def __init__(self, dmm_parametername = None) -> None:
-
+        
+        os.system("sudo /sbin/ip link set can0 up type can bitrate 250000")
+        self._can_monitor = CanBusMonitor()
+        self._bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=250000)    
+        self._notifier = Notifier(self._bus, [self._can_monitor])
+        
         # power supply is required
         if not os.path.exists('/dev/ttyUSBrd6018'):
             raise ValueError('No Riden RD6018 Detected')
         powersupply_port = '/dev/ttyUSBrd6018'
         self._powersupply = RD6006(powersupply_port)
-        self._powersupply_monitor = RidenMonitor(self._powersupply)
+        self._powersupply_monitor = RidenMonitor(rd60xx=self._powersupply)
 
         # DMM is optional depending on test
         if dmm_parametername:
@@ -35,11 +41,21 @@ class BMSTestFixture:
 
         # canbus monitor is required
         # setup canbus and recq can monitor
-        os.system("sudo /sbin/ip link set can0 up type can bitrate 250000")
-        self._bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=250000)         
-        self._notifier = can.Notifier(self._bus, [])
-        self._can_monitor = CanBusMonitor()
-        self._notifier.add_listener(self._can_monitor)
+        #os.system("sudo /sbin/ip link set can0 down")
+        #os.system("sudo /sbin/ip link set can0 up type can bitrate 250000")
+        #os.system("sudo ip link set can0 type can restart-ms 100")
+        #self._can_monitor = CanBusMonitor()
+        
+        #self._bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=250000)    
+        #time.sleep(0.5)     
+        #time.sleep(0.5)     
+        #print("setup can now sleeping for 10 seconds")
+        #time.sleep(10)
+
+        #self._notifier = Notifier(self._bus, [self._can_monitor])
+        #self._notifier.add_listener(self._can_monitor)
+        #print("setup notifier now sleeping for 10 seconds")
+        #time.sleep(10)
 
         # setup logger
         self._logger = InstrumentLogger()

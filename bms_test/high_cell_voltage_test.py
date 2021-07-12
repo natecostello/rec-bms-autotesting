@@ -34,6 +34,7 @@ class HighCellVoltageTest(unittest.TestCase):
         self.test_fixture = BMSTestFixture()
         self.test_fixture.powersupply.voltage = self.initial_voltage
         self.test_fixture.start()
+        time.sleep(1)
 
 
         # self.test_fixture.logger.filename = 'high_cell_voltage_test_' + str(datetime.now()).replace(" ", "_").replace(":", "_")
@@ -42,6 +43,8 @@ class HighCellVoltageTest(unittest.TestCase):
 
         self.test_fixture.logger.filename = 'charge_current_limit_reduction_test'
         self.test_fixture.logger.start()
+
+        time.sleep(2)
 
         self.assertEqual(self.test_fixture.bin_monitor.contactor, True, msg="contactor is not closed but should be")
         self.assertEqual(self.test_fixture.bin_monitor.chargeEnable, True, msg="chargeEnable is false but should be true")
@@ -58,6 +61,14 @@ class HighCellVoltageTest(unittest.TestCase):
         
         
     def increment_voltage_and_wait(self):
+        print("inside increment voltage and wait")
+        print("voltage setpoint is:")
+        try:
+            print(str(self.test_fixture.powersupply.voltage))
+        except Exception as inst:
+            print(inst)
+            pass
+        
         if self.test_fixture.powersupply.voltage + self.voltage_increment < self.voltage_limit:
             self.test_fixture.powersupply.voltage += self.voltage_increment
             time.sleep(2)
