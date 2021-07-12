@@ -1,6 +1,6 @@
-from rd6006 import RD6006
+from riden_monitor import RidenMonitor
 from uni_t import DMMMonitor
-from riden import RidenMonitor
+from riden import Riden
 from recq.binary import BinaryMonitor
 from recq.canbus import CanBusMonitor
 from instrument_logger import InstrumentLogger
@@ -32,7 +32,7 @@ class HighCellVoltageTest(unittest.TestCase):
         self.maxc = 70.0 # 'Maximum charging curren'
 
         self.test_fixture = BMSTestFixture()
-        self.test_fixture.powersupply.voltage = self.initial_voltage
+        self.test_fixture.powersupply.set_voltage_set(self.initial_voltage)
         self.test_fixture.start()
         time.sleep(1)
 
@@ -64,24 +64,26 @@ class HighCellVoltageTest(unittest.TestCase):
         print("inside increment voltage and wait")
         print("voltage setpoint is:")
         try:
-            print(str(self.test_fixture.powersupply.voltage))
+            print(str(self.test_fixture.powersupply.voltage_set))
         except Exception as inst:
             print(inst)
             pass
         
-        if self.test_fixture.powersupply.voltage + self.voltage_increment < self.voltage_limit:
-            self.test_fixture.powersupply.voltage += self.voltage_increment
+        voltage_setpoint = self.test_fixture.powersupply.voltage_set
+        if voltage_setpoint + self.voltage_increment < self.voltage_limit:
+            self.test_fixture.powersupply.set_voltage_set(voltage_setpoint + self.voltage_increment)
             time.sleep(2)
         else:
             self.reset_voltage()
             raise NameError("Max Voltage Limit Exceeded")
 
     def decrement_voltage_and_wait(self):
-        self.test_fixture.powersupply.voltage -= self.voltage_increment
+        voltage_setpoint = self.test_fixture.powersupply.voltage_set
+        self.test_fixture.powersupply.set_voltage_set(voltage_setpoint - self.voltage_increment)
         time.sleep(2)
 
     def reset_voltage(self):
-        self.test_fixture.powersupply.voltage = self.initial_voltage
+        self.test_fixture.powersupply.set_voltage_set(self.initial_voltage)
         
         
 

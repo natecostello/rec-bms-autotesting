@@ -1,6 +1,6 @@
-from rd6006 import RD6006
+from riden_monitor import RidenMonitor
 from uni_t import DMMMonitor
-from riden import RidenMonitor
+from riden import Riden
 from recq.binary import BinaryMonitor
 from recq.canbus import CanBusMonitor
 from instrument_logger import InstrumentLogger
@@ -22,13 +22,13 @@ class BMSTestFixture:
         if not os.path.exists('/dev/ttyUSBrd6018'):
             raise ValueError('No Riden RD6018 Detected')
         powersupply_port = '/dev/ttyUSBrd6018'
-        self._powersupply = RD6006(powersupply_port)
+        self._powersupply = Riden(powersupply_port)
         self._powersupply_monitor = RidenMonitor(rd60xx=self._powersupply)
 
         # DMM is optional depending on test
         if dmm_parametername:
             if not os.path.exists('/dev/ttyUSBut61e'):
-                raise ValueError('No Riden RD6018 Detected')
+                raise ValueError('No UT61E Detected')
             dmm_port = '/dev/ttyUSBut61e'
 
             self._dmm_monitor = DMMMonitor(dmm_port)
@@ -66,7 +66,7 @@ class BMSTestFixture:
         self._logger.addinstrument(self._can_monitor)
     
     @property
-    def powersupply(self) -> RD6006:
+    def powersupply(self) -> Riden:
         return self._powersupply
     
     @property
