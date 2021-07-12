@@ -17,6 +17,7 @@ class BMSTestFixture:
         self._can_monitor = CanBusMonitor()
         self._bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=250000)    
         self._notifier = Notifier(self._bus, [self._can_monitor])
+        print("") #clear the line
         
         # power supply is required
         if not os.path.exists('/dev/ttyUSBrd6018'):
@@ -24,6 +25,7 @@ class BMSTestFixture:
         powersupply_port = '/dev/ttyUSBrd6018'
         self._powersupply = Riden(powersupply_port)
         self._powersupply_monitor = RidenMonitor(rd60xx=self._powersupply)
+        self._powersupply_monitor.start()
 
         # DMM is optional depending on test
         if dmm_parametername:
@@ -39,23 +41,6 @@ class BMSTestFixture:
         # binary monitor is required
         self._bin_monitor = BinaryMonitor()
 
-        # canbus monitor is required
-        # setup canbus and recq can monitor
-        #os.system("sudo /sbin/ip link set can0 down")
-        #os.system("sudo /sbin/ip link set can0 up type can bitrate 250000")
-        #os.system("sudo ip link set can0 type can restart-ms 100")
-        #self._can_monitor = CanBusMonitor()
-        
-        #self._bus = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=250000)    
-        #time.sleep(0.5)     
-        #time.sleep(0.5)     
-        #print("setup can now sleeping for 10 seconds")
-        #time.sleep(10)
-
-        #self._notifier = Notifier(self._bus, [self._can_monitor])
-        #self._notifier.add_listener(self._can_monitor)
-        #print("setup notifier now sleeping for 10 seconds")
-        #time.sleep(10)
 
         # setup logger
         self._logger = InstrumentLogger()

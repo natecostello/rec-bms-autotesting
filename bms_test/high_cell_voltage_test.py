@@ -55,21 +55,16 @@ class HighCellVoltageTest(unittest.TestCase):
         
         self.assertAlmostEqual(self.test_fixture.can_monitor.max_cell_voltage, self.bmin, 2, msg="Charge Limit Reduction Voltage Mismatch: Max Cell Voltage = " + str(self.test_fixture.can_monitor.max_cell_voltage) + ', BMIN = ' + str(self.bmin))
         
+        #hold at this voltage
+
+        time.sleep(10)
         self.reset_voltage()
         time.sleep(10)
         self.test_fixture.logger.stop()
         
         
     def increment_voltage_and_wait(self):
-        print("inside increment voltage and wait")
-        print("voltage setpoint is:")
-        try:
-            print(str(self.test_fixture.powersupply.voltage_set))
-        except Exception as inst:
-            print(inst)
-            pass
-        
-        voltage_setpoint = self.test_fixture.powersupply.voltage_set
+        voltage_setpoint = self.test_fixture.powersupply.get_voltage_set()
         if voltage_setpoint + self.voltage_increment < self.voltage_limit:
             self.test_fixture.powersupply.set_voltage_set(voltage_setpoint + self.voltage_increment)
             time.sleep(2)
@@ -78,7 +73,7 @@ class HighCellVoltageTest(unittest.TestCase):
             raise NameError("Max Voltage Limit Exceeded")
 
     def decrement_voltage_and_wait(self):
-        voltage_setpoint = self.test_fixture.powersupply.voltage_set
+        voltage_setpoint = self.test_fixture.powersupply.get_voltage_set()
         self.test_fixture.powersupply.set_voltage_set(voltage_setpoint - self.voltage_increment)
         time.sleep(2)
 
