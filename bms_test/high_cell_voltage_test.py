@@ -1,3 +1,4 @@
+from riden.registers import TIME_MINUTE
 from riden_monitor import RidenMonitor
 from uni_t import DMMMonitor
 from riden import Riden
@@ -19,7 +20,7 @@ class HighCellVoltageTest(unittest.TestCase):
         # power supply parameters
         self.initial_voltage = 26.0
         self.voltage_limit = 31.0
-        self.voltage_increment = 0.05
+        self.voltage_increment = 0.01
 
         # default BMS Parameters
         # ultimately it would be nice to pull all these parameters from the BMS
@@ -36,10 +37,71 @@ class HighCellVoltageTest(unittest.TestCase):
         self.test_fixture.start()
         time.sleep(1)
 
+        
+        # Walk Voltage down to min cell voltage == CLOW evidenced by SOC <= 3
+        while self.test_fixture.can_monitor.state_of_charge_hi_res > 3:
+            self.decrement_voltage_and_wait()
+        
+
+
+        self.test_fixture.logger.filename = 'rising_voltage_test'
+        self.test_fixture.logger.start()
+
+        # Walk Voltage Up To max cell voltage == bmin evidenced by reduction in CCL
+        while self.test_fixture.can_monitor.charge_current_limit >= self.maxc:
+            self.increment_voltage_and_wait()
+        
+        # hold at this voltage and note parameters
+        time.sleep(10)
+
+        self.max_cell_voltage_at_ccl_reduction = self.test_fixture.can_monitor.max_cell_voltage
+        self.charge_voltage_limit_at_ccl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
+
+        # Walk Voltage Up To max cell voltage == 0.502*(bmin+bvol) evidenced by SOC >= 96
+        while self.test_fixture.can_monitor.state_of_charge_hi_res < 96.0:
+            self.increment_voltage_and_wait()
+        
+        # hold at this voltage and note parameters
+        self.min_cell_voltage_at_soc_to_96 = self.test_fixture.can_monitor.min_cell_voltage
+
+
+        # Walk Voltage up to min cell voltage == char evidenced by reduction in CVL
+        while self.test_fixture.can_monitor.charge_voltage_limit >= 28.7: # This value is as reported via CAN normally.  Note sure what the basis is. 
+            self.increment_voltage_and_wait()
+        
+        # hold at this voltage and note parameters
+        time.sleep(10)
+
+        self.min_cell_voltage_at_cvl_reduction = self.test_fixture.can_monitor.min_cell_voltage
+        self.charge_voltage_limit_at_cvl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
+        # In this condition per manual, CVL is set to = num_cells * (char - 0.2 * chis)
+        self.soc_hr_at_cvl_reduction = self.test_fixture.can_monitor.state_of_charge_hi_res # should be 100
+        self.soc_at_cvl_reductioin = self.test_fixture.can_monitor.state_of_charge # should be 100
+        self.charge_enable_status_at_cvl_reductioin = self.test_fixture.bin_monitor.chargeEnable # should be off 
+
+        # Walk voltage up to cutoff
+        while self.test_fixture.bin_monitor.contactor:
+            self.increment_voltage_and_wait()
+        
+        # hold at this voltage and note parameters
+        time.sleep(1)
+        self.max_cell_voltage_at_relay_cutoff = self.test_fixture.can_monitor.max_cell_voltage # should be cmax + maxh
+        self.charge_enable_status_at_relay_cutoff = self.test_fixture.bin_monitor.chargeEnable # should be off
+ 
+        
+        time.sleep(1)
+        self.reset_voltage()
+        time.sleep(10)
+        self.test_fixture.logger.stop()
+        
+
+
+
 
         # self.test_fixture.logger.filename = 'high_cell_voltage_test_' + str(datetime.now()).replace(" ", "_").replace(":", "_")
 
     def test_charge_current_limit_reduction(self):
+        # TODO: Rewrite to just compare values
 
         self.test_fixture.logger.filename = 'charge_current_limit_reduction_test'
         self.test_fixture.logger.start()
@@ -62,7 +124,8 @@ class HighCellVoltageTest(unittest.TestCase):
         time.sleep(10)
         self.test_fixture.logger.stop()
         
-        
+    # TODO: Rewrite remaining test cases
+
     def increment_voltage_and_wait(self):
         voltage_setpoint = self.test_fixture.powersupply.get_voltage_set()
         if voltage_setpoint + self.voltage_increment < self.voltage_limit:
