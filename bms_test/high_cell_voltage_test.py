@@ -37,13 +37,11 @@ class HighCellVoltageTest(unittest.TestCase):
         self.test_fixture.start()
         time.sleep(1)
 
-        
         # Walk Voltage down to min cell voltage == CLOW evidenced by SOC <= 3
         while self.test_fixture.can_monitor.state_of_charge_hi_res > 3:
             self.decrement_voltage_and_wait()
         
-
-
+        time.sleep(10)
         self.test_fixture.logger.filename = 'rising_voltage_test'
         self.test_fixture.logger.start()
 
@@ -53,7 +51,6 @@ class HighCellVoltageTest(unittest.TestCase):
         
         # hold at this voltage and note parameters
         time.sleep(10)
-
         self.max_cell_voltage_at_ccl_reduction = self.test_fixture.can_monitor.max_cell_voltage
         self.charge_voltage_limit_at_ccl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
 
@@ -62,6 +59,7 @@ class HighCellVoltageTest(unittest.TestCase):
             self.increment_voltage_and_wait()
         
         # hold at this voltage and note parameters
+        time.sleep(10)
         self.min_cell_voltage_at_soc_to_96 = self.test_fixture.can_monitor.min_cell_voltage
 
 
@@ -71,7 +69,6 @@ class HighCellVoltageTest(unittest.TestCase):
         
         # hold at this voltage and note parameters
         time.sleep(10)
-
         self.min_cell_voltage_at_cvl_reduction = self.test_fixture.can_monitor.min_cell_voltage
         self.charge_voltage_limit_at_cvl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
         # In this condition per manual, CVL is set to = num_cells * (char - 0.2 * chis)
@@ -94,11 +91,6 @@ class HighCellVoltageTest(unittest.TestCase):
         time.sleep(10)
         self.test_fixture.logger.stop()
         
-
-
-
-
-        # self.test_fixture.logger.filename = 'high_cell_voltage_test_' + str(datetime.now()).replace(" ", "_").replace(":", "_")
 
     def test_charge_current_limit_reduction(self):
         # TODO: Rewrite to just compare values
