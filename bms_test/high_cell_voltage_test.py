@@ -45,16 +45,15 @@ class HighCellVoltageTest(unittest.TestCase):
         self.test_fixture.logger.filename = 'rising_voltage_test'
         self.test_fixture.logger.start()
 
-        # Walk Voltage Up To max cell voltage == bmin evidenced by reduction in CCL
+        # Walk Voltage Up To max cell voltage == bmin, evidenced by reduction in CCL
         while self.test_fixture.can_monitor.charge_current_limit >= self.maxc:
             self.increment_voltage_and_wait()
         
         # hold at this voltage and note parameters
         time.sleep(10)
         self.max_cell_voltage_at_ccl_reduction = self.test_fixture.can_monitor.max_cell_voltage
-        self.charge_voltage_limit_at_ccl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
-
-        # Walk Voltage Up To max cell voltage == 0.502*(bmin+bvol) evidenced by SOC >= 96
+        
+        # Walk Voltage Up To max cell voltage == 0.502*(bmin+bvol), evidenced by SOC >= 96
         while self.test_fixture.can_monitor.state_of_charge_hi_res < 96.0:
             self.increment_voltage_and_wait()
         
@@ -63,7 +62,7 @@ class HighCellVoltageTest(unittest.TestCase):
         self.min_cell_voltage_at_soc_to_96 = self.test_fixture.can_monitor.min_cell_voltage
 
 
-        # Walk Voltage up to min cell voltage == char evidenced by reduction in CVL
+        # Walk Voltage up to min cell voltage == char, evidenced by reduction in CVL
         while self.test_fixture.can_monitor.charge_voltage_limit >= 28.7: # This value is as reported via CAN normally.  Note sure what the basis is. 
             self.increment_voltage_and_wait()
         
@@ -73,8 +72,8 @@ class HighCellVoltageTest(unittest.TestCase):
         self.charge_voltage_limit_at_cvl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
         # In this condition per manual, CVL is set to = num_cells * (char - 0.2 * chis)
         self.soc_hr_at_cvl_reduction = self.test_fixture.can_monitor.state_of_charge_hi_res # should be 100
-        self.soc_at_cvl_reductioin = self.test_fixture.can_monitor.state_of_charge # should be 100
-        self.charge_enable_status_at_cvl_reductioin = self.test_fixture.bin_monitor.chargeEnable # should be off 
+        self.soc_at_cvl_reduction = self.test_fixture.can_monitor.state_of_charge # should be 100
+        self.charge_enable_status_at_cvl_reduction = self.test_fixture.bin_monitor.chargeEnable # should be off 
 
         # Walk voltage up to cutoff
         while self.test_fixture.bin_monitor.contactor:
@@ -89,34 +88,75 @@ class HighCellVoltageTest(unittest.TestCase):
         time.sleep(1)
         self.reset_voltage()
         time.sleep(10)
+
+        # check parameters?  Not sure when Charge Enable is set back to 1, Not sure when relay is enabled
+
         self.test_fixture.logger.stop()
         
 
-    def test_charge_current_limit_reduction(self):
-        # TODO: Rewrite to just compare values
+    def test_charge_current_limit_reduction_voltage(self):
+        self.assertAlmostEqual(
+            self.max_cell_voltage_at_ccl_reduction, 
+            self.bmin, 
+            2, 
+            msg="Charge Current Limit Reduction Voltage Mismatch: Max Cell Voltage = " + str(self.max_cell_voltage_at_ccl_reduction) + ', BMIN = ' + str(self.bmin))
 
-        self.test_fixture.logger.filename = 'charge_current_limit_reduction_test'
-        self.test_fixture.logger.start()
+    def test_soc_to_ninetysix_voltage(self):
+        self.assertAlmostEqual(
+            self.min_cell_voltage_at_soc_to_96, 
+            0.502 * (self.bmin + self.bvol), 
+            2, 
+            msg="SOC to 96% Voltage Mismatch: Min Cell Voltage = " + str(self.min_cell_voltage_at_soc_to_96) + ', 0.502(BMIN+BVOL) = ' + str(0.502*(self.bmin + self.bvol)))
 
-        time.sleep(2)
+    def test_charge_voltage_limit_reduction_voltage(self):
+        self.assertAlmostEqual(
+            self.min_cell_voltage_at_cvl_reduction,
+            self.char,
+            2,
+            msg="Charge Voltage Limit Reduction Voltage Mismatch: Min Cell Voltage = " + str(self.min_cell_voltage_at_cvl_reduction) + ', CHAR = ' + str(self.char))
+    
+    def test_charge_voltage_limit_reduction_CVL_value(self):
+        num_cells = 8
+        self.assertAlmostEqual(
+            self.charge_voltage_limit_at_cvl_reduction,
+            num_cells * (self.char - 0.2 * self.chis),
+            2,
+            msg="Charge Voltage Limit Reduction Value Mismatch: Charge Voltage Limit = " + str(self.charge_voltage_limit_at_cvl_reduction) + ', num_cells(CHAR - 0.2*CHIS) = ' + str(num_cells * (self.char - 0.2 * self.chis)))
+    
+    def test_charge_voltage_limit_reduction_soc_hr_value(self):
+        self.assertAlmostEqual(
+            self.soc_hr_at_cvl_reduction,
+            100.00,
+            2,
+            msg="Charge Voltage Limit Reduction Value Mismatch: SOC_HR = " + str(self.soc_hr_at_cvl_reduction) + ', Value should = 100.00')
+    
+    def test_charge_voltage_limit_reduction_soc_value(self):
+        self.assertEqual(
+            self.soc_at_cvl_reduction,
+            100,
+            msg="Charge Voltage Limit Reduction Value Mismatch: SOC = " + str(self.soc_at_cvl_reduction) + ', Value should = 100')
+    
+    def test_charge_voltage_limit_reduction_charge_enable_status(self):
+        self.assertEqual(
+            self.charge_enable_status_at_cvl_reduction,
+            0,
+            msg="Charge Voltage Limit Reduction Value Mismatch: Charge Enable = " + str(self.charge_enable_status_at_cvl_reduction) + ', Value should = 0')
+    
+    def test_relay_cutoff_voltage(self):
+        self.assertAlmostEqual(
+            self.max_cell_voltage_at_relay_cutoff,
+            self.cmax + self.maxh,
+            2,
+            msg="Relay Cutoff Voltage Mismatch: Max Cell Voltage = " + str(self.max_cell_voltage_at_relay_cutoff) + ', CMAX + MAXH = ' + str(self.cmax + self.maxh))
 
-        self.assertEqual(self.test_fixture.bin_monitor.contactor, True, msg="contactor is not closed but should be")
-        self.assertEqual(self.test_fixture.bin_monitor.chargeEnable, True, msg="chargeEnable is false but should be true")
-        
+    def test_relay_cutoff_charge_enable_status(self):
+        self.assertEqual(
+            self.charge_enable_status_at_relay_cutoff,
+            0,
+            msg="Relay Cutoff Value Mismatch: Charge Enable = " + str(self.charge_enable_status_at_relay_cutoff) + ', Value should = 0')
 
-        while self.test_fixture.can_monitor.charge_current_limit >= self.maxc:
-            self.increment_voltage_and_wait()
-        
-        self.assertAlmostEqual(self.test_fixture.can_monitor.max_cell_voltage, self.bmin, 2, msg="Charge Limit Reduction Voltage Mismatch: Max Cell Voltage = " + str(self.test_fixture.can_monitor.max_cell_voltage) + ', BMIN = ' + str(self.bmin))
-        
-        #hold at this voltage
 
-        time.sleep(10)
-        self.reset_voltage()
-        time.sleep(10)
-        self.test_fixture.logger.stop()
-        
-    # TODO: Rewrite remaining test cases
+    # TODO: Test Relay Turn On?  Not sure when that is supposed to happen.  Need to watch BMS temp carefully when it starts to balance all cells.
 
     def increment_voltage_and_wait(self):
         voltage_setpoint = self.test_fixture.powersupply.get_voltage_set()
