@@ -1,7 +1,7 @@
 from pandas import read_csv
 import matplotlib.pyplot as plt
 
-filename = 'charge_current_limit_reduction_test.csv'
+filename = 'rising_voltage_test.csv'
 
 df = read_csv(filename, header=0, parse_dates=[0], index_col=0)
 

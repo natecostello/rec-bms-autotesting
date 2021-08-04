@@ -13,85 +13,172 @@ from standard_setup import BMSTestFixture
 from datetime import datetime
 
 
-class HighCellVoltageTest(unittest.TestCase):
-    """"This test case verifies response and protections to high cell voltage.  Initial conditions: Power supply providing 26V and battery is ON."""
-    def setUp(self) -> None:
-        
-        # power supply parameters
-        self.initial_voltage = 26.0
-        self.voltage_limit = 31.0
-        self.voltage_increment = 0.01
+class RisingCellVoltageTest(unittest.TestCase):
+    """"This test case verifies response and protections to rising cell voltage.  Initial conditions: Power supply providing 26V and battery is ON."""
+
+    @classmethod
+    def setUpClass(cls):
+                # power supply parameters
+        cls.initial_voltage = 26.0
+        cls.voltage_limit = 32.0
+        cls.voltage_increment = 0.01
 
         # default BMS Parameters
         # ultimately it would be nice to pull all these parameters from the BMS
-        self.bmin = 3.45 # 'Balance Start Voltage'
-        self.bvol = 3.58 # 'Balance End Voltage'
-        self.cmax = 3.85 # 'Cell over-voltage switch-off per cell
-        self.maxh = 0.25 # 'Over-voltage switch-off hysteresis per cell'
-        self.char = 3.58 # 'Cell end of charge voltage'
-        self.chis = 0.25 # 'End of charge hysterisis per cell'
-        self.maxc = 70.0 # 'Maximum charging curren'
+        cls.bmin = 3.45 # 'Balance Start Voltage'
+        cls.bvol = 3.58 # 'Balance End Voltage'
+        cls.cmax = 3.85 # 'Cell over-voltage switch-off per cell
+        cls.maxh = 0.25 # 'Over-voltage switch-off hysteresis per cell'
+        cls.char = 3.58 # 'Cell end of charge voltage'
+        cls.chis = 0.25 # 'End of charge hysterisis per cell'
+        cls.maxc = 70.0 # 'Maximum charging current'
 
-        self.test_fixture = BMSTestFixture()
-        self.test_fixture.powersupply.set_voltage_set(self.initial_voltage)
-        self.test_fixture.start()
+        cls.test_fixture = BMSTestFixture()
+        cls.test_fixture.powersupply.set_voltage_set(cls.initial_voltage)
+        cls.test_fixture.start()
         time.sleep(1)
 
         # Walk Voltage down to min cell voltage == CLOW evidenced by SOC <= 3
-        while self.test_fixture.can_monitor.state_of_charge_hi_res > 3:
-            self.decrement_voltage_and_wait()
-        
+        while cls.test_fixture.can_monitor.state_of_charge > 3:
+            print("SOC is > 3 => decrementing")
+            cls.decrement_voltage_and_wait(voltage_increment=0.1)
         time.sleep(10)
-        self.test_fixture.logger.filename = 'rising_voltage_test'
-        self.test_fixture.logger.start()
+        
+        # Reset to Starting Voltage
+        cls.test_fixture.powersupply.set_voltage_set(cls.initial_voltage)
+        time.sleep(10)
+
+
+        cls.test_fixture.logger.filename = 'rising_voltage_test'
+        cls.test_fixture.logger.start()
 
         # Walk Voltage Up To max cell voltage == bmin, evidenced by reduction in CCL
-        while self.test_fixture.can_monitor.charge_current_limit >= self.maxc:
-            self.increment_voltage_and_wait()
+        while cls.test_fixture.can_monitor.charge_current_limit >= cls.maxc:
+            cls.increment_voltage_and_wait(voltage_increment=0.1)
         
         # hold at this voltage and note parameters
         time.sleep(10)
-        self.max_cell_voltage_at_ccl_reduction = self.test_fixture.can_monitor.max_cell_voltage
+        cls.max_cell_voltage_at_ccl_reduction = cls.test_fixture.can_monitor.max_cell_voltage
         
         # Walk Voltage Up To max cell voltage == 0.502*(bmin+bvol), evidenced by SOC >= 96
-        while self.test_fixture.can_monitor.state_of_charge_hi_res < 96.0:
-            self.increment_voltage_and_wait()
+        while cls.test_fixture.can_monitor.state_of_charge_hi_res < 96.0:
+            cls.increment_voltage_and_wait(voltage_increment=0.1)
         
         # hold at this voltage and note parameters
         time.sleep(10)
-        self.min_cell_voltage_at_soc_to_96 = self.test_fixture.can_monitor.min_cell_voltage
+        cls.min_cell_voltage_at_soc_to_96 = cls.test_fixture.can_monitor.min_cell_voltage
 
 
         # Walk Voltage up to min cell voltage == char, evidenced by reduction in CVL
-        while self.test_fixture.can_monitor.charge_voltage_limit >= 28.7: # This value is as reported via CAN normally.  Note sure what the basis is. 
-            self.increment_voltage_and_wait()
+        while cls.test_fixture.can_monitor.charge_voltage_limit >= 28.7: # This value is as reported via CAN normally.  Note sure what the basis is. 
+            cls.increment_voltage_and_wait(voltage_increment=0.1)
         
         # hold at this voltage and note parameters
         time.sleep(10)
-        self.min_cell_voltage_at_cvl_reduction = self.test_fixture.can_monitor.min_cell_voltage
-        self.charge_voltage_limit_at_cvl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
+        cls.min_cell_voltage_at_cvl_reduction = cls.test_fixture.can_monitor.min_cell_voltage
+        cls.charge_voltage_limit_at_cvl_reduction = cls.test_fixture.can_monitor.charge_voltage_limit
         # In this condition per manual, CVL is set to = num_cells * (char - 0.2 * chis)
-        self.soc_hr_at_cvl_reduction = self.test_fixture.can_monitor.state_of_charge_hi_res # should be 100
-        self.soc_at_cvl_reduction = self.test_fixture.can_monitor.state_of_charge # should be 100
-        self.charge_enable_status_at_cvl_reduction = self.test_fixture.bin_monitor.chargeEnable # should be off 
+        cls.soc_hr_at_cvl_reduction = cls.test_fixture.can_monitor.state_of_charge_hi_res # should be 100
+        cls.soc_at_cvl_reduction = cls.test_fixture.can_monitor.state_of_charge # should be 100
+        cls.charge_enable_status_at_cvl_reduction = cls.test_fixture.bin_monitor.chargeEnable # should be off 
 
         # Walk voltage up to cutoff
-        while self.test_fixture.bin_monitor.contactor:
-            self.increment_voltage_and_wait()
+        while cls.test_fixture.bin_monitor.contactor:
+            cls.increment_voltage_and_wait(voltage_increment=0.1)
         
         # hold at this voltage and note parameters
         time.sleep(1)
-        self.max_cell_voltage_at_relay_cutoff = self.test_fixture.can_monitor.max_cell_voltage # should be cmax + maxh
-        self.charge_enable_status_at_relay_cutoff = self.test_fixture.bin_monitor.chargeEnable # should be off
+        cls.max_cell_voltage_at_relay_cutoff = cls.test_fixture.can_monitor.max_cell_voltage # should be cmax + maxh
+        cls.charge_enable_status_at_relay_cutoff = cls.test_fixture.bin_monitor.chargeEnable # should be off
  
         
-        time.sleep(1)
-        self.reset_voltage()
+        time.sleep(10)
+        cls.reset_voltage()
         time.sleep(10)
 
         # check parameters?  Not sure when Charge Enable is set back to 1, Not sure when relay is enabled
 
-        self.test_fixture.logger.stop()
+        cls.test_fixture.logger.stop()
+
+
+
+    def setUp(self) -> None:
+        pass
+        # # power supply parameters
+        # self.initial_voltage = 26.0
+        # self.voltage_limit = 31.0
+        # self.voltage_increment = 0.01
+
+        # # default BMS Parameters
+        # # ultimately it would be nice to pull all these parameters from the BMS
+        # self.bmin = 3.45 # 'Balance Start Voltage'
+        # self.bvol = 3.58 # 'Balance End Voltage'
+        # self.cmax = 3.85 # 'Cell over-voltage switch-off per cell
+        # self.maxh = 0.25 # 'Over-voltage switch-off hysteresis per cell'
+        # self.char = 3.58 # 'Cell end of charge voltage'
+        # self.chis = 0.25 # 'End of charge hysterisis per cell'
+        # self.maxc = 70.0 # 'Maximum charging current'
+
+        # self.test_fixture = BMSTestFixture()
+        # self.test_fixture.powersupply.set_voltage_set(self.initial_voltage)
+        # self.test_fixture.start()
+        # time.sleep(1)
+
+        # # Walk Voltage down to min cell voltage == CLOW evidenced by SOC <= 3
+        # while self.test_fixture.can_monitor.state_of_charge_hi_res > 3:
+        #     self.decrement_voltage_and_wait()
+        
+        # time.sleep(10)
+        # self.test_fixture.logger.filename = 'rising_voltage_test'
+        # self.test_fixture.logger.start()
+
+        # # Walk Voltage Up To max cell voltage == bmin, evidenced by reduction in CCL
+        # while self.test_fixture.can_monitor.charge_current_limit >= self.maxc:
+        #     self.increment_voltage_and_wait()
+        
+        # # hold at this voltage and note parameters
+        # time.sleep(10)
+        # self.max_cell_voltage_at_ccl_reduction = self.test_fixture.can_monitor.max_cell_voltage
+        
+        # # Walk Voltage Up To max cell voltage == 0.502*(bmin+bvol), evidenced by SOC >= 96
+        # while self.test_fixture.can_monitor.state_of_charge_hi_res < 96.0:
+        #     self.increment_voltage_and_wait()
+        
+        # # hold at this voltage and note parameters
+        # time.sleep(10)
+        # self.min_cell_voltage_at_soc_to_96 = self.test_fixture.can_monitor.min_cell_voltage
+
+
+        # # Walk Voltage up to min cell voltage == char, evidenced by reduction in CVL
+        # while self.test_fixture.can_monitor.charge_voltage_limit >= 28.7: # This value is as reported via CAN normally.  Note sure what the basis is. 
+        #     self.increment_voltage_and_wait()
+        
+        # # hold at this voltage and note parameters
+        # time.sleep(10)
+        # self.min_cell_voltage_at_cvl_reduction = self.test_fixture.can_monitor.min_cell_voltage
+        # self.charge_voltage_limit_at_cvl_reduction = self.test_fixture.can_monitor.charge_voltage_limit
+        # # In this condition per manual, CVL is set to = num_cells * (char - 0.2 * chis)
+        # self.soc_hr_at_cvl_reduction = self.test_fixture.can_monitor.state_of_charge_hi_res # should be 100
+        # self.soc_at_cvl_reduction = self.test_fixture.can_monitor.state_of_charge # should be 100
+        # self.charge_enable_status_at_cvl_reduction = self.test_fixture.bin_monitor.chargeEnable # should be off 
+
+        # # Walk voltage up to cutoff
+        # while self.test_fixture.bin_monitor.contactor:
+        #     self.increment_voltage_and_wait()
+        
+        # # hold at this voltage and note parameters
+        # time.sleep(1)
+        # self.max_cell_voltage_at_relay_cutoff = self.test_fixture.can_monitor.max_cell_voltage # should be cmax + maxh
+        # self.charge_enable_status_at_relay_cutoff = self.test_fixture.bin_monitor.chargeEnable # should be off
+ 
+        
+        # time.sleep(1)
+        # self.reset_voltage()
+        # time.sleep(10)
+
+        # # check parameters?  Not sure when Charge Enable is set back to 1, Not sure when relay is enabled
+
+        # self.test_fixture.logger.stop()
         
 
     def test_charge_current_limit_reduction_voltage(self):
@@ -158,22 +245,25 @@ class HighCellVoltageTest(unittest.TestCase):
 
     # TODO: Test Relay Turn On?  Not sure when that is supposed to happen.  Need to watch BMS temp carefully when it starts to balance all cells.
 
-    def increment_voltage_and_wait(self):
-        voltage_setpoint = self.test_fixture.powersupply.get_voltage_set()
-        if voltage_setpoint + self.voltage_increment < self.voltage_limit:
-            self.test_fixture.powersupply.set_voltage_set(voltage_setpoint + self.voltage_increment)
-            time.sleep(2)
+    @classmethod
+    def increment_voltage_and_wait(cls, voltage_increment=0.01):
+        voltage_setpoint = cls.test_fixture.powersupply.get_voltage_set()
+        if voltage_setpoint + voltage_increment < cls.voltage_limit:
+            cls.test_fixture.powersupply.set_voltage_set(voltage_setpoint + voltage_increment)
+            time.sleep(4)
         else:
-            self.reset_voltage()
+            cls.reset_voltage()
             raise NameError("Max Voltage Limit Exceeded")
 
-    def decrement_voltage_and_wait(self):
-        voltage_setpoint = self.test_fixture.powersupply.get_voltage_set()
-        self.test_fixture.powersupply.set_voltage_set(voltage_setpoint - self.voltage_increment)
-        time.sleep(2)
+    @classmethod
+    def decrement_voltage_and_wait(cls, voltage_increment=0.01):
+        voltage_setpoint = cls.test_fixture.powersupply.get_voltage_set()
+        cls.test_fixture.powersupply.set_voltage_set(voltage_setpoint - voltage_increment)
+        time.sleep(4)
 
-    def reset_voltage(self):
-        self.test_fixture.powersupply.set_voltage_set(self.initial_voltage)
+    @classmethod
+    def reset_voltage(cls):
+        cls.test_fixture.powersupply.set_voltage_set(cls.initial_voltage)
         
         
 
