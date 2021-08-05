@@ -1,7 +1,14 @@
 from pandas import read_csv
 import matplotlib.pyplot as plt
+import os
+import sys
 
-filename = 'rising_voltage_test.csv'
+os.system('rm *.png')
+
+
+
+# filename = 'rising_voltage_test.csv'
+filename = str(sys.argv[1])
 
 df = read_csv(filename, header=0, parse_dates=[0], index_col=0)
 
@@ -12,26 +19,91 @@ for col in df.columns:
 
 parsedTitle = filename.split('.')[0]
 
+# # max cell voltage vs charge current limit
+# # example of dual y axis
+# fig, ax = plt.subplots()
+# ax.plot(df[['rec-q-can.Max Cell Voltage.V']], color="red")
+# ax.set_ylabel("Max Cell Voltage [V]", color="red")
+# ax2 = ax.twinx()
+# ax2.plot(df[['rec-q-can.CCL.A']], color="blue")
+# ax2.set_ylabel("CCL [A]", color="blue")
+
+# plt.show()
+
+# plot_description = 'Cell Voltage and CCL'
+# plot_title = plot_description + ' ' + parsedTitle
+# plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
+# plt.title(plot_title)
+
+# plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left")
+# plt.savefig(plot_filename, bbox_inches="tight")
+
+# stack subplots
 # max cell voltage vs charge current limit
-
-fig, ax = plt.subplots()
-ax.plot(df[['rec-q-can.Max Cell Voltage.V']], color="red")
-ax.set_ylabel("Max Cell Voltage [V]", color="red")
-ax2 = ax.twinx()
-ax2.plot(df[['rec-q-can.CCL.A']], color="blue")
-ax2.set_ylabel("CCL [A]", color="blue")
-
-plt.show()
-
-#df[['rec-q-can.Max Cell Voltage.V', 'rec-q-can.CCL.A']].plot()
-plot_description = 'Cell Voltage and CCL'
+fig, axs = plt.subplots(2, sharex=True)
+plot_description = 'Max Cell Voltage and CCL'
 plot_title = plot_description + ' ' + parsedTitle
 plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
-plt.title(plot_title)
+fig.suptitle(plot_title)
+# max cell voltage vs time
+axs[0].plot(df[['rec-q-can.Max Cell Voltage.V']], label="Max Cell Voltage", color="red")
+# charge current limit vs time
+axs[1].plot(df[['rec-q-can.CCL.A']], label="Charge Current Limit", color="blue")
 
-#plt.ylim(2.5,3.9)
-plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left")
+for ax in axs:
+    ax.label_outer()
+    ax.legend(loc="upper left", bbox_to_anchor=[0, 1], fancybox=True)
+
+plt.show()
 plt.savefig(plot_filename, bbox_inches="tight")
+
+# stack subplots 
+# min cell voltage vs several params
+fig, axs = plt.subplots(4, sharex=True)
+plot_description = 'Min Cell Voltage and End of Charge'
+plot_title = plot_description + ' ' + parsedTitle
+plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
+fig.suptitle(plot_title)
+# min cell voltage vs time
+axs[0].plot(df[['rec-q-can.Min Cell Voltage.V']], label="Min Cell Voltage", color="red")
+# charge voltage limit vs time
+axs[1].plot(df[['rec-q-can.CVL.V']], label="Charge Voltage Limit", color="blue")
+# SOC vs time
+axs[2].plot(df[['rec-q-can.SOC_HR.%']], label="SOC", color="green")
+# Charge Enable vs time
+axs[3].plot(df[['rec-q-binary.charge_enable.binary']], label="Charge Enable", color="orange")
+
+for ax in axs:
+    ax.label_outer()
+    ax.legend(loc="upper left", bbox_to_anchor=[0, 1], fancybox=True)
+
+plt.show()
+plt.savefig(plot_filename, bbox_inches="tight")
+
+
+# stack subplots 
+# max cell voltage vs relay cutoff 
+fig, axs = plt.subplots(2, sharex=True)
+
+plot_description = 'Max Cell Voltage and Contactor'
+plot_title = plot_description + ' ' + parsedTitle
+plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
+fig.suptitle(plot_title)
+
+# max cell voltage vs time
+axs[0].plot(df[['rec-q-can.Max Cell Voltage.V']], label="Max Cell Voltage", color="red")
+
+# contactor
+axs[1].plot(df[['rec-q-binary.contactor.binary']], label="Contactor Status", color="blue")
+
+for ax in axs:
+    ax.label_outer()
+    ax.legend(loc="upper left", bbox_to_anchor=[0, 1], fancybox=True)
+
+plt.show()
+plt.savefig(plot_filename, bbox_inches="tight")
+
+
 
 
 # cell voltages
