@@ -38,6 +38,73 @@ parsedTitle = filename.split('.')[0]
 # plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left")
 # plt.savefig(plot_filename, bbox_inches="tight")
 
+# stack subplots 
+# max temp vs several params for falling temp
+fig, axs = plt.subplots(3, sharex=True)
+plot_description = 'Min Temperature'
+plot_title = plot_description + ' ' + parsedTitle
+plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
+fig.suptitle(plot_title)
+# min cell voltage vs time
+axs[0].plot(df[['rec-q-can.Min Temperature.C']], label="Min Temperature", color="red")
+# charge voltage limit vs time
+axs[1].plot(df[['rec-q-can.CCL.A']], label="Charge Current Limit", color="blue")
+# SOC vs time
+axs[2].plot(df[['rec-q-binary.charge_enable.binary']], label="Charge Enable", color="green")
+
+for ax in axs:
+    ax.label_outer()
+    ax.legend(loc="upper left", bbox_to_anchor=[0, 1], fancybox=True)
+
+plt.show()
+plt.savefig(plot_filename, bbox_inches="tight")
+
+# stack subplots 
+# max temp vs several params for rising temp
+fig, axs = plt.subplots(4, sharex=True)
+plot_description = 'Max Temperature'
+plot_title = plot_description + ' ' + parsedTitle
+plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
+fig.suptitle(plot_title)
+# min cell voltage vs time
+axs[0].plot(df[['rec-q-can.Max Temperature.C']], label="Max Temperature", color="red")
+# charge voltage limit vs time
+axs[1].plot(df[['rec-q-can.CCL.A']], label="Charge Current Limit", color="blue")
+# SOC vs time
+axs[2].plot(df[['rec-q-binary.charge_enable.binary']], label="Charge Enable", color="green")
+# Charge Enable vs time
+axs[3].plot(df[['rec-q-binary.contactor.binary']], label="Contactor", color="orange")
+
+for ax in axs:
+    ax.label_outer()
+    ax.legend(loc="upper left", bbox_to_anchor=[0, 1], fancybox=True)
+
+plt.show()
+plt.savefig(plot_filename, bbox_inches="tight")
+
+# stack subplots 
+# min cell voltage vs several params for disch
+fig, axs = plt.subplots(4, sharex=True)
+plot_description = 'Min Cell Voltage and End of Discharge'
+plot_title = plot_description + ' ' + parsedTitle
+plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
+fig.suptitle(plot_title)
+# min cell voltage vs time
+axs[0].plot(df[['rec-q-can.Min Cell Voltage.V']], label="Min Cell Voltage", color="red")
+# charge voltage limit vs time
+axs[1].plot(df[['rec-q-can.DCL.A']], label="Discharge Current Limit", color="blue")
+# SOC vs time
+axs[2].plot(df[['rec-q-can.SOC_HR.%']], label="SOC", color="green")
+# Charge Enable vs time
+axs[3].plot(df[['rec-q-binary.contactor.binary']], label="Contactor", color="orange")
+
+for ax in axs:
+    ax.label_outer()
+    ax.legend(loc="upper left", bbox_to_anchor=[0, 1], fancybox=True)
+
+plt.show()
+plt.savefig(plot_filename, bbox_inches="tight")
+
 # stack subplots
 # max cell voltage vs charge current limit
 fig, axs = plt.subplots(2, sharex=True)
@@ -125,7 +192,8 @@ plot_title = plot_description + ' ' + parsedTitle
 plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
 plt.title(plot_title)
 
-plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left")
+#plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left")
+plt.legend(loc="center right", bbox_to_anchor=[1, 0.5], fancybox=True)
 plt.savefig(plot_filename, bbox_inches="tight")
 
 # Binary values
@@ -171,7 +239,7 @@ plot_title = plot_description + ' ' + parsedTitle
 plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
 plt.title(plot_title)
 
-plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left")
+plt.legend(loc="center left", bbox_to_anchor=[0, 0.5], fancybox=True)
 plt.savefig(plot_filename, bbox_inches="tight")
 
 # CL and Battery Current

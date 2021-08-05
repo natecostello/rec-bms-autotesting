@@ -53,25 +53,26 @@ class FallingCellVoltageTest(unittest.TestCase):
             cls.increment_voltage_and_wait(voltage_increment=0.25)
         time.sleep(10)
         
-        # Reset to Starting Voltage
-        cls.test_fixture.powersupply.set_voltage_set(cls.initial_voltage)
+        # Reset to 8*(CMIN+MINH+0.1)
+        cls.test_fixture.powersupply.set_voltage_set(8*(cls.cmin + cls.minh + 0.1))
         time.sleep(10)
 
 
         cls.test_fixture.logger.filename = 'falling_voltage_test'
         cls.test_fixture.logger.start()
 
-        # Walk Voltage Down To min cell voltage < CLOW
-        while cls.test_fixture.can_monitor.min_cell_voltage > cls.clow:
+        # Walk Voltage Down To min cell voltage < 0.99*CLOW
+        while cls.test_fixture.can_monitor.min_cell_voltage > 0.995 * cls.clow:
             cls.decrement_voltage_and_wait(voltage_increment=0.01)
         
         # hold at this voltage and note parameters dcl should decreasee to 0.02C or 0?, SOC set to 3%
+        # SOC is reset to 2%, however SOC_HR is reset to 2.9%
         time.sleep(10)
         cls.dcl_at_min_cell_voltage_below_clow = cls.test_fixture.can_monitor.discharge_current_limit
         cls.soc_at_min_cell_voltage_below_clow = cls.test_fixture.can_monitor.state_of_charge
         
-        # Walk Voltage Down To min cell voltage < CMIN
-        while cls.test_fixture.can_monitor.min_cell_voltage > cls.cmin:
+        # Walk Voltage Down To min cell voltage < 0.99*CMIN
+        while cls.test_fixture.can_monitor.min_cell_voltage > 0.995 * cls.cmin:
             cls.decrement_voltage_and_wait(voltage_increment=0.01)
         
         # hold at this voltage and note parameters, SOC should be set to 1%, Contactor open
@@ -103,11 +104,12 @@ class FallingCellVoltageTest(unittest.TestCase):
             0.02*self.capa, 
             msg="Discharge Current Limit Reduction Value Mismatch: DCL = " + str(self.dcl_at_min_cell_voltage_below_clow) + ', Should be < ' + str(0.02*self.capa))
     
+    # Note: SOC_HR is reset to 2.9, SOC is reset to 2
     def test_SOC_reduction_value_at_clow(self):
         self.assertEqual(
             self.soc_at_min_cell_voltage_below_clow, 
-            3, 
-            msg="SOC Reduction Value Mismatch: SOC = " + str(self.soc_at_min_cell_voltage_below_clow) + ', Should = ' + str(3))
+            2, 
+            msg="SOC Reduction Value Mismatch: SOC = " + str(self.soc_at_min_cell_voltage_below_clow) + ', Should = ' + str(2))
 
     def test_SOC_reduction_value_at_cmin(self):
         self.assertEqual(
