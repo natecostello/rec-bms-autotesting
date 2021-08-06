@@ -149,7 +149,7 @@ plt.savefig(plot_filename, bbox_inches="tight")
 
 # stack subplots 
 # min cell voltage vs several params
-fig, axs = plt.subplots(4, sharex=True)
+fig, axs = plt.subplots(5, sharex=True)
 plot_description = 'Max Cell Voltage and End of Charge'
 plot_title = plot_description + ' ' + parsedTitle
 plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
@@ -158,10 +158,12 @@ fig.suptitle(plot_title)
 axs[0].plot(df[['rec-q-can.Max Cell Voltage.V']], label="Max Cell Voltage", color="red")
 # charge voltage limit vs time
 axs[1].plot(df[['rec-q-can.CVL.V']], label="Charge Voltage Limit", color="blue")
+# charge current limit vs time
+axs[2].plot(df[['rec-q-can.CCL.A']], label="Charge Current Limit", color="purple")
 # Charge Enable vs time
-axs[2].plot(df[['rec-q-binary.charge_enable.binary']], label="Charge Enable", color="orange")
+axs[3].plot(df[['rec-q-binary.charge_enable.binary']], label="Charge Enable", color="orange")
 # Contactor vs time
-axs[3].plot(df[['rec-q-binary.contactor.binary']], label="Contactor Status", color="green")
+axs[4].plot(df[['rec-q-binary.contactor.binary']], label="Contactor Status", color="green")
 
 for ax in axs:
     ax.label_outer()
@@ -254,14 +256,15 @@ plt.legend(bbox_to_anchor=(1.04,0.5), loc="center left")
 plt.savefig(plot_filename, bbox_inches="tight")
 
 # VL and Battery Voltage
-df[['rec-q-can.CVL.V', 'rec-q-can.DVL.V', 'rec-q-can.Battery Voltage.V']].plot()
+#df[['rec-q-can.CVL.V', 'rec-q-can.DVL.V', 'rec-q-can.Battery Voltage.V']].plot()
+df[['rec-q-can.CVL.V', 'rec-q-can.Battery Voltage.V']].plot()
 
 plot_description = 'Battery Voltage'
 plot_title = plot_description + ' ' + parsedTitle
 plot_filename = plot_description.replace(' ', '-').lower() + '-' + parsedTitle + '.png'
 plt.title(plot_title)
 
-plt.legend(loc="center left", bbox_to_anchor=[0, 0.5], fancybox=True)
+plt.legend(loc="upper left", bbox_to_anchor=[0, 1], fancybox=True)
 plt.savefig(plot_filename, bbox_inches="tight")
 
 # CL and Battery Current
