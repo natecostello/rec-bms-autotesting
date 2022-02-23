@@ -6,4 +6,5 @@
 git+https://github.com/natecostello/rec_bms_status.git 
 git+https://github.com/natecostello/uni_t_status.git 
 git+https://github.com/natecostello/riden-status.git 
-git+https://github.com/natecostello/rd6006.git
+#git+https://github.com/natecostello/rd6006.git
+git+https://github.com/ShayBox/Riden

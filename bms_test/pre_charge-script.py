@@ -29,20 +29,17 @@ from datetime import datetime
 test_fixture = BMSTestFixture(dmm_parametername='Pack_Voltage[v]')
 
 
-
-test_fixture.powersupply.set_voltage_set(initial_voltage)
 test_fixture.start()
 time.sleep(1)
 
-# Monitor for Power supply output to be enabled
 # Start logging
 # message user to turn on system (precharge and close contactor)
-
+# message user to enable riden
 
 test_fixture.logger.filename = 'initial-battery-precharge'
 test_fixture.logger.start()
 
-# User has 60 seconds to turn on system, otherwise logging will stop, and script will end
+# User has 60 seconds to turn on system and enable riden, otherwise logging will stop, and script will end
 
 time.sleep(60)
 
@@ -53,3 +50,4 @@ while test_fixture.bin_monitor.contactor and test_fixture.powersupply.is_output:
 
 time.sleep(5)
 test_fixture.logger.stop()
+test_fixture.stop()
