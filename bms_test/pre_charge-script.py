@@ -24,7 +24,7 @@ from datetime import datetime
 """BMS IR, BMS CE, and Precharge Sys+ should be monitored by the logging pi"""
 
 
-test_fixture = BMSTestFixture(dmm_parametername='Pack_Voltage[v]')
+test_fixture = BMSTestFixture(dmm_parametername='Pack_Voltage')
 
 
 test_fixture.start()
@@ -38,7 +38,7 @@ test_fixture.logger.filename = 'initial-battery-precharge'
 test_fixture.logger.start()
 
 # User has 60 seconds to turn on system and enable riden, otherwise logging will stop, and script will end
-print("Turn on system via")
+print("Turn on system via main switch and enable Riden output.")
 
 time.sleep(60)
 
