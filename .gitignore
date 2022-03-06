@@ -4,6 +4,8 @@ __pycache__/*
 *.pyc
 *.png
 
+bms_test/__pycache__/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
