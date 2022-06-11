@@ -17,7 +17,7 @@ from datetime import datetime
 """CMAX 'End of charge hysterisis per cell' MUST be changed from the default 3.85 to 3.65 prior to initial battery precharge."""
 """MAXH 'Over-voltage switch-off hysteresis per cell' SHOULD be changed from the default 0.25 to 0.05."""
 """Riden voltage setpoint should be 29.2V (For a subsequent 3.65V top balance)"""
-"""Rident current setpoint should be 15A (for p/s margin)"""
+"""Rident current setpoint should be 18A"""
 """DMM Should be set to measure voltage across the battery pack"""
 """O-scope will be used to measure voltage ripple across battery pack"""
 """Contactor Aux Contacts should be wired to logging pi 3.3v and to contactor input pin"""
